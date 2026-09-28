@@ -1,0 +1,37 @@
+{
+  "title": "Time Manager",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Time Manager",
+        "description": "Controls devices locally by clock time, sunrise, sunset or timer.",
+        "data": {
+          "name": "Name",
+          "language": "Language",
+          "scan_interval": "Check interval"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Time Manager – Settings",
+        "data": {
+          "name": "Name",
+          "language": "Language",
+          "scan_interval": "Check interval"
+        }
+      }
+    }
+  },
+  "selector": {
+    "language": {
+      "options": {
+        "auto": "Automatic (Home Assistant)",
+        "de": "Deutsch",
+        "en": "English"
+      }
+    }
+  }
+}
