@@ -1,0 +1,39 @@
+add_device:
+  name: Gerät hinzufügen
+  description: Fügt ein Gerät zum Zeitmanager hinzu.
+
+update_device:
+  name: Gerät bearbeiten
+  description: Ändert ein vorhandenes Gerät.
+
+remove_device:
+  name: Gerät entfernen
+  description: Entfernt ein Gerät aus dem Zeitmanager.
+
+set_device_enabled:
+  name: Gerät aktivieren/deaktivieren
+  description: Aktiviert oder deaktiviert die Zeitsteuerung für ein Gerät.
+
+add_schedule:
+  name: Zeitplan hinzufügen
+  description: Fügt einem Gerät einen Zeitplan hinzu.
+
+update_schedule:
+  name: Zeitplan bearbeiten
+  description: Ändert einen vorhandenen Zeitplan.
+
+remove_schedule:
+  name: Zeitplan entfernen
+  description: Entfernt einen Zeitplan.
+
+start_timer:
+  name: Timer starten
+  description: Schaltet das Gerät ein und nach der angegebenen Zeit wieder aus.
+
+cancel_timer:
+  name: Timer abbrechen
+  description: Bricht einen laufenden Timer ab.
+
+set_enabled:
+  name: Zeitmanager ein/aus
+  description: Aktiviert oder deaktiviert die gesamte Zeitsteuerung.
