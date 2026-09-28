@@ -12,9 +12,7 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          ignore: topics
-
-  hassfest:
+hassfest:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
