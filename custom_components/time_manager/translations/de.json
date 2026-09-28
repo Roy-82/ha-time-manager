@@ -1,0 +1,37 @@
+{
+  "title": "Zeitmanager",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Zeitmanager einrichten",
+        "description": "Verwaltet Geräte lokal nach Uhrzeit, Sonnenaufgang, Sonnenuntergang oder Timer.",
+        "data": {
+          "name": "Name",
+          "language": "Sprache",
+          "scan_interval": "Prüfintervall"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Zeitmanager – Einstellungen",
+        "data": {
+          "name": "Name",
+          "language": "Sprache",
+          "scan_interval": "Prüfintervall"
+        }
+      }
+    }
+  },
+  "selector": {
+    "language": {
+      "options": {
+        "auto": "Automatisch (Home Assistant)",
+        "de": "Deutsch",
+        "en": "English"
+      }
+    }
+  }
+}
