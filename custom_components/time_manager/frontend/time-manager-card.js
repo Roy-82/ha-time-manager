@@ -1,4 +1,4 @@
-const TIME_MANAGER_VERSION = "0.1.0";
+const TIME_MANAGER_VERSION = "0.2.0";
 
 const TM_I18N = {
   de: {
@@ -18,6 +18,8 @@ const TM_I18N = {
     selectDevice:"Bitte zuerst ein Gerät auswählen.", confirmRemove:"wirklich entfernen?",
     noSchedules:"Noch keine Zeitpläne.", timerRemaining:"Timer läuft noch", error:"Fehler",
     status:"Status", version:"Version", customTimer:"Eigener Timer", minutesShort:"min",
+    timerPresets:"Timer-Schnellwahl", timerPresetsHint:"Die drei Zeiten können für jedes Gerät getrennt festgelegt werden.",
+    nextSwitch:"Nächste Schaltung",
     entityHint:"Unterstützt: switch, light, climate, cover, fan",
     climateHint:"Bei deiner HANTECH kann z. B. heat_cool statt heat verwendet werden.",
     coverHint:"0 = geschlossen, 100 = vollständig geöffnet."
@@ -39,6 +41,8 @@ const TM_I18N = {
     selectDevice:"Please select a device first.", confirmRemove:"really remove?",
     noSchedules:"No schedules yet.", timerRemaining:"Timer remaining", error:"Error",
     status:"Status", version:"Version", customTimer:"Custom timer", minutesShort:"min",
+    timerPresets:"Timer presets", timerPresetsHint:"The three times can be configured separately for each device.",
+    nextSwitch:"Next switch",
     entityHint:"Supported: switch, light, climate, cover, fan",
     climateHint:"Some climate devices require heat_cool instead of heat.",
     coverHint:"0 = closed, 100 = fully open."
@@ -69,7 +73,7 @@ class TimeManagerCard extends HTMLElement {
 
   getCardSize() {
     const n = this._state()?.attributes?.devices?.length || 1;
-    return Math.max(5, Math.ceil((190 + n * 76) / 50));
+    return Math.max(5, Math.ceil((180 + n * 68) / 50));
   }
 
   _queueRender() {
@@ -143,20 +147,20 @@ class TimeManagerCard extends HTMLElement {
       .layout{display:grid;grid-template-columns:minmax(0,1fr) 48px;gap:10px}
       .list{display:flex;flex-direction:column;gap:8px;min-width:0}
       .empty{padding:28px 14px;text-align:center;border:1px dashed var(--divider-color);border-radius:12px;color:var(--secondary-text-color)}
-      .row{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px;border:1px solid var(--divider-color);border-radius:12px;cursor:pointer;background:var(--ha-card-background,var(--card-background-color))}
+      .row{display:grid;grid-template-columns:30px minmax(0,1fr);align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--divider-color);border-radius:12px;cursor:pointer;background:var(--ha-card-background,var(--card-background-color))}
       .row.sel{outline:2px solid var(--primary-color);outline-offset:-2px}
-      .row.disabled{opacity:.55}
-      .stateDot{width:12px;height:12px;border-radius:50%;margin:auto;background:var(--divider-color)}
-      .stateDot.on{background:var(--success-color,#43a047)}
+      .row.disabled{opacity:.62}
+      .deviceToggle{display:flex;align-items:center;justify-content:center;cursor:pointer}
+      .deviceToggle input{width:18px;height:18px;cursor:pointer}
       .name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       .sub{font-size:12px;color:var(--secondary-text-color);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-      .rightStatus{text-align:right;font-size:12px;white-space:nowrap}
+      .nextLine{font-size:12px;color:var(--secondary-text-color);margin-top:5px}
       .timer{color:var(--primary-color);font-weight:600}
-      .tools{display:flex;flex-direction:column;gap:8px}
+      .tools{display:flex;flex-direction:column;gap:8px;justify-content:center;align-self:stretch}
       button.icon{width:44px;height:44px;border-radius:12px;border:1px solid var(--divider-color);background:var(--card-background-color);color:var(--primary-text-color);font-size:22px;cursor:pointer}
       button.icon:hover{background:var(--secondary-background-color)}
-      .quick{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-      .quick button,.smallbtn,.primary{border:1px solid var(--divider-color);border-radius:9px;padding:6px 10px;background:var(--secondary-background-color);color:var(--primary-text-color);cursor:pointer}
+      .timerActions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+      .timerActions button,.smallbtn,.primary{border:1px solid var(--divider-color);border-radius:9px;padding:6px 10px;background:var(--secondary-background-color);color:var(--primary-text-color);cursor:pointer}
       .primary{background:var(--primary-color);color:var(--text-primary-color,#fff);border-color:var(--primary-color)}
       .foot{margin-top:12px;font-size:11px;color:var(--secondary-text-color);text-align:right}
       .overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;padding:18px}
@@ -168,6 +172,7 @@ class TimeManagerCard extends HTMLElement {
       input[type=checkbox]{width:auto}
       .check{display:flex;align-items:center;gap:8px}
       .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+      .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
       .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
       .hint{font-size:11px;color:var(--secondary-text-color);margin-top:4px}
       .schedule{border:1px solid var(--divider-color);border-radius:10px;padding:9px;margin-top:8px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
@@ -176,7 +181,7 @@ class TimeManagerCard extends HTMLElement {
       .weekdays{display:flex;gap:5px;flex-wrap:wrap}
       .day{display:flex;align-items:center;gap:3px;padding:5px 7px;border-radius:8px;background:var(--secondary-background-color);font-size:12px}
       .section{margin-top:15px;padding-top:12px;border-top:1px solid var(--divider-color)}
-      @media(max-width:560px){.grid2{grid-template-columns:1fr}.rightStatus{display:none}.row{grid-template-columns:28px minmax(0,1fr)}}
+      @media(max-width:560px){.grid2,.grid3{grid-template-columns:1fr}.row{grid-template-columns:28px minmax(0,1fr)}}
     `;
   }
 
@@ -194,26 +199,15 @@ class TimeManagerCard extends HTMLElement {
     const rows = devices.map(d => {
       const next = d.next_action;
       const nextText = next ? `${next.action === "on" ? this._t("on") : this._t("off")} · ${this._fmtWhen(next.at)}` : "—";
-      const timerText = d.timer_remaining_s > 0 ? `<div class="timer">${this._t("timerRemaining")}: ${this._fmtRemaining(d.timer_remaining_s)}</div>` : "";
-      const schCount = (d.schedules || []).length;
       return `
         <div class="row ${d.id===this._selectedId?"sel":""} ${!d.enabled?"disabled":""}" data-id="${d.id}">
-          <div><div class="stateDot ${d.is_on?"on":""}"></div></div>
+          <label class="deviceToggle" title="${this._t("enabled")}">
+            <input type="checkbox" data-device-enabled="${d.id}" ${d.enabled?"checked":""}>
+          </label>
           <div>
             <div class="name">${this._esc(d.name)}</div>
-            <div class="sub">${this._esc(d.entity_id)} · ${schCount} ${this._t("schedules").toLowerCase()}</div>
-            ${timerText}
-            <div class="quick">
-              <button data-timer="30" data-device="${d.id}">30 min</button>
-              <button data-timer="60" data-device="${d.id}">60 min</button>
-              <button data-timer="120" data-device="${d.id}">120 min</button>
-              <button data-custom-timer="${d.id}">…</button>
-              ${d.timer_remaining_s>0?`<button data-cancel-timer="${d.id}">× ${this._t("timer")}</button>`:""}
-            </div>
-          </div>
-          <div class="rightStatus">
-            <div><b>${d.enabled ? (d.is_on?this._t("on"):this._t("off")) : this._t("disabled")}</b></div>
-            <div class="sub">${this._t("next")}: ${nextText}</div>
+            <div class="sub">${this._esc(d.entity_id)}</div>
+            <div class="nextLine">${this._t("nextSwitch")}: ${nextText}</div>
           </div>
         </div>`;
     }).join("");
@@ -238,9 +232,13 @@ class TimeManagerCard extends HTMLElement {
       </ha-card>`;
 
     this.shadowRoot.querySelectorAll(".row").forEach(el => el.addEventListener("click", e => {
-      if (e.target.closest("button")) return;
+      if (e.target.closest("button,input,label")) return;
       this._selectedId = el.dataset.id;
       this._render();
+    }));
+    this.shadowRoot.querySelectorAll("[data-device-enabled]").forEach(cb => cb.addEventListener("change", async e => {
+      e.stopPropagation();
+      await this._call("set_device_enabled",{device_id:cb.dataset.deviceEnabled,enabled:cb.checked});
     }));
     this.shadowRoot.querySelector("#add")?.addEventListener("click", () => this._openDevice(null));
     this.shadowRoot.querySelector("#edit")?.addEventListener("click", () => {
@@ -254,24 +252,13 @@ class TimeManagerCard extends HTMLElement {
     });
     this.shadowRoot.querySelector("#master")?.addEventListener("change", e => this._call("set_enabled",{enabled:e.target.checked}));
 
-    this.shadowRoot.querySelectorAll("[data-timer]").forEach(b => b.addEventListener("click", e => {
-      e.stopPropagation(); this._call("start_timer",{device_id:b.dataset.device,duration_min:Number(b.dataset.timer)});
-    }));
-    this.shadowRoot.querySelectorAll("[data-custom-timer]").forEach(b => b.addEventListener("click", e => {
-      e.stopPropagation();
-      const v=prompt(`${this._t("minutes")}:`,"45");
-      if (v && Number(v)>0) this._call("start_timer",{device_id:b.dataset.customTimer,duration_min:Number(v)});
-    }));
-    this.shadowRoot.querySelectorAll("[data-cancel-timer]").forEach(b => b.addEventListener("click", e => {
-      e.stopPropagation(); this._call("cancel_timer",{device_id:b.dataset.cancelTimer,turn_off:true});
-    }));
   }
 
   _openDevice(device) {
     this._modal = {type:"device", id:device?.id || null};
     const d = device || {
       name:"",entity_id:"",enabled:true,climate_mode:"heat_cool",target_temp:20,
-      cover_on_position:100,cover_off_position:0,schedules:[]
+      cover_on_position:100,cover_off_position:0,timer_presets:[30,60,90],schedules:[]
     };
     const host=this.shadowRoot.querySelector("#modalHost");
     host.innerHTML = `
@@ -283,6 +270,22 @@ class TimeManagerCard extends HTMLElement {
         </div>
         <div class="field check"><input id="dEnabled" type="checkbox" ${d.enabled?"checked":""}><label for="dEnabled">${this._t("enabled")}</label></div>
         <div id="domainFields"></div>
+        <div class="section">
+          <b>${this._t("timerPresets")}</b>
+          <div class="grid3">
+            <div class="field"><label>1 (${this._t("minutesShort")})</label><input id="dTimer1" type="number" min="1" max="10080" value="${this._esc((d.timer_presets||[30,60,90])[0] ?? 30)}"></div>
+            <div class="field"><label>2 (${this._t("minutesShort")})</label><input id="dTimer2" type="number" min="1" max="10080" value="${this._esc((d.timer_presets||[30,60,90])[1] ?? 60)}"></div>
+            <div class="field"><label>3 (${this._t("minutesShort")})</label><input id="dTimer3" type="number" min="1" max="10080" value="${this._esc((d.timer_presets||[30,60,90])[2] ?? 90)}"></div>
+          </div>
+          <div class="hint">${this._t("timerPresetsHint")}</div>
+          ${device ? `<div class="timerActions">
+            <button data-device-timer="1">${this._esc((d.timer_presets||[30,60,90])[0] ?? 30)} min</button>
+            <button data-device-timer="2">${this._esc((d.timer_presets||[30,60,90])[1] ?? 60)} min</button>
+            <button data-device-timer="3">${this._esc((d.timer_presets||[30,60,90])[2] ?? 90)} min</button>
+            <button id="customTimer">…</button>
+            ${d.timer_remaining_s>0?`<button id="cancelTimer">× ${this._t("timer")}</button>`:""}
+          </div>` : ""}
+        </div>
         ${device ? `
         <div class="section">
           <div style="display:flex;align-items:center;justify-content:space-between"><b>${this._t("schedules")}</b><button class="smallbtn" id="addSchedule">+ ${this._t("addSchedule")}</button></div>
@@ -324,6 +327,18 @@ class TimeManagerCard extends HTMLElement {
     if (device) {
       this._renderSchedules(device);
       host.querySelector("#addSchedule").addEventListener("click",()=>this._openSchedule(device,null));
+      host.querySelectorAll("[data-device-timer]").forEach(b=>b.addEventListener("click",async()=>{
+        const input=host.querySelector(`#dTimer${b.dataset.deviceTimer}`);
+        const minutes=Math.max(1,Number(input?.value||0));
+        if(minutes>0) await this._call("start_timer",{device_id:device.id,duration_min:minutes});
+      }));
+      host.querySelector("#customTimer")?.addEventListener("click",async()=>{
+        const v=prompt(`${this._t("minutes")}:`,"45");
+        if(v && Number(v)>0) await this._call("start_timer",{device_id:device.id,duration_min:Number(v)});
+      });
+      host.querySelector("#cancelTimer")?.addEventListener("click",async()=>{
+        await this._call("cancel_timer",{device_id:device.id,turn_off:true});
+      });
     }
 
     host.querySelector("#saveDevice").addEventListener("click",async()=>{
@@ -333,6 +348,7 @@ class TimeManagerCard extends HTMLElement {
         name:host.querySelector("#dName").value.trim() || entity,
         entity_id:entity,
         enabled:host.querySelector("#dEnabled").checked,
+        timer_presets:[1,2,3].map(i=>Math.max(1,Math.min(10080,Number(host.querySelector(`#dTimer${i}`).value||[30,60,90][i-1])))),
       };
       if(domain==="climate"){
         data.climate_mode=host.querySelector("#dClimate").value;
