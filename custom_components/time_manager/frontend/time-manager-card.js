@@ -198,7 +198,7 @@ class TimeManagerCard extends HTMLElement {
 
     const rows = devices.map(d => {
       const next = d.next_action;
-      const nextText = next ? `${next.action === "on" ? this._t("on") : this._t("off")} · ${this._fmtWhen(next.at)}` : "—";
+      const nextText = d.enabled && next ? `${next.action === "on" ? this._t("on") : this._t("off")} · ${this._fmtWhen(next.at)}` : "—";
       return `
         <div class="row ${d.id===this._selectedId?"sel":""} ${!d.enabled?"disabled":""}" data-id="${d.id}">
           <label class="deviceToggle" title="${this._t("enabled")}">
