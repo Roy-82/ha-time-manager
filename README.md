@@ -23,8 +23,10 @@ Bei Climate-Geräten können HVAC-Modus und Solltemperatur festgelegt werden. Be
 - positiver oder negativer Minuten-Offset
 - Wochentage frei auswählbar
 - Zeiträume über Mitternacht
-- Countdown-Timer mit Schnellwahl 30 / 60 / 120 Minuten
+- Countdown-Timer mit drei je Gerät frei konfigurierbaren Schnellwahlzeiten (Standard 30 / 60 / 90 Minuten)
 - individuelle Timerdauer
+- kompakte Geräteübersicht mit Checkbox zum Aktivieren/Deaktivieren der Zeitsteuerung
+- Geräteübersicht zeigt nur Name, Entität und nächste Schaltung
 - automatisches Ausschalten nach Timerende
 - Climate-Modus und Solltemperatur
 - Rollladenpositionen 0–100 %
@@ -51,7 +53,7 @@ Bei Climate-Geräten können HVAC-Modus und Solltemperatur festgelegt werden. Be
 
 Unter **Einstellungen → Dashboards → Ressourcen** einmalig hinzufügen:
 
-- URL: `/time_manager/time-manager-card.js?v=0.1.0`
+- URL: `/time_manager/time-manager-card.js?v=0.2.0`
 - Typ: **JavaScript-Modul**
 
 Danach eine manuelle Karte anlegen:
@@ -89,10 +91,14 @@ AUS: 22:00 Uhr
 HVAC-Modus: `heat_cool`  
 Solltemperatur: 20 °C
 
+## Geräteübersicht
+
+Die Übersicht bleibt bewusst kompakt. Pro Gerät werden nur der gewählte Name, die Entität und die nächste Schaltung angezeigt. Links aktiviert oder deaktiviert eine Checkbox die Zeitsteuerung dieses Geräts. Rechts stehen +, − und ✎ vertikal zentriert neben der Geräteliste.
+
 ## Timer
 
-Direkt in der Geräteliste stehen Schnell-Timer mit 30, 60 und 120 Minuten zur Verfügung. Über **…** kann eine eigene Dauer eingegeben werden.
+Die Timer-Bedienung befindet sich im Geräteeditor hinter **✎**. Pro Gerät können drei Schnellwahlzeiten frei festgelegt werden; Standard sind 30, 60 und 90 Minuten. Dort lassen sich die Schnell-Timer direkt starten, über **…** eine freie Dauer eingeben und ein laufender Timer abbrechen.
 
 Der Zeitmanager erzeugt keine Home-Assistant-Automationen. Die Zeitpläne werden von der Integration selbst verwaltet.
 
-Version: **0.1.0**
+Version: **0.2.0**
