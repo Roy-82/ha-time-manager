@@ -105,6 +105,16 @@ class TimeManager:
     def _normalize_device(self, raw: dict[str, Any]) -> dict[str, Any]:
         entity_id = str(raw.get("entity_id") or "")
         domain = entity_id.split(".", 1)[0] if "." in entity_id else ""
+        presets: list[int] = []
+        for value in raw.get("timer_presets") or [30, 60, 90]:
+            try:
+                presets.append(max(1, min(10080, int(value))))
+            except (TypeError, ValueError):
+                continue
+        defaults = [30, 60, 90]
+        presets = presets[:3]
+        while len(presets) < 3:
+            presets.append(defaults[len(presets)])
         return {
             "id": str(raw.get("id") or uuid.uuid4().hex),
             "name": str(raw.get("name") or entity_id or "Gerät"),
@@ -117,6 +127,7 @@ class TimeManager:
             ),
             "cover_on_position": max(0, min(100, int(raw.get("cover_on_position", 100)))),
             "cover_off_position": max(0, min(100, int(raw.get("cover_off_position", 0)))),
+            "timer_presets": presets,
             "timer_until": float(raw.get("timer_until") or 0),
             "timer_started": float(raw.get("timer_started") or 0),
             "schedules": [self._normalize_schedule(x) for x in raw.get("schedules", [])],
@@ -153,6 +164,7 @@ class TimeManager:
                 "target_temp": data.get("target_temp"),
                 "cover_on_position": data.get("cover_on_position", 100),
                 "cover_off_position": data.get("cover_off_position", 0),
+                "timer_presets": data.get("timer_presets", [30, 60, 90]),
                 "schedules": [],
             }
         )
@@ -174,6 +186,7 @@ class TimeManager:
             "target_temp",
             "cover_on_position",
             "cover_off_position",
+            "timer_presets",
         ):
             if key in data:
                 device[key] = data[key]
@@ -444,7 +457,7 @@ class TimeManager:
             "scan_interval": self.scan_interval,
             "devices": result,
             "supported_domains": SUPPORTED_DOMAINS,
-            "version": "0.1.0",
+            "version": "0.2.0",
         }
 
     async def _async_tick(self, _now) -> None:
