@@ -1,4 +1,4 @@
-const TIME_MANAGER_VERSION = "0.2.1";
+const TIME_MANAGER_VERSION = "0.2.2";
 
 const TM_I18N = {
   de: {
@@ -19,7 +19,7 @@ const TM_I18N = {
     noSchedules:"Noch keine Zeitpläne.", timerRemaining:"Timer läuft noch", error:"Fehler",
     status:"Status", version:"Version", customTimer:"Eigener Timer", minutesShort:"min",
     timerPresets:"Timer-Schnellwahl", timerPresetsHint:"Die drei Zeiten können für jedes Gerät getrennt festgelegt werden.",
-    nextSwitch:"Nächste Schaltung", firstSchedule:"Ersten Zeitplan direkt anlegen", scheduleSettings:"Zeitsteuerung / Zeitpläne", editShort:"Bearbeiten",
+    nextSwitch:"Nächste Schaltung", firstSchedule:"Ersten Zeitplan direkt anlegen", scheduleSettings:"Zeitsteuerung / Zeitpläne", editShort:"Bearbeiten", quickTimerTitle:"Schnelltimer", quickTimerIntro:"Ein Klick schaltet das Gerät sofort ein und nach der gewählten Zeit wieder aus.", timerRunning:"Timer läuft", timerEndsIn:"Ausschalten in", timerStarted:"Timer gestartet", ownDuration:"Eigene Zeit…", stopTimer:"Timer stoppen", presetSettings:"Schnellzeiten ändern", presetSaveHint:"Änderungen an den drei Zeiten werden mit „Speichern“ übernommen.",
     entityHint:"Unterstützt: switch, light, climate, cover, fan",
     climateHint:"Bei deiner HANTECH kann z. B. heat_cool statt heat verwendet werden.",
     coverHint:"0 = geschlossen, 100 = vollständig geöffnet."
@@ -42,7 +42,7 @@ const TM_I18N = {
     noSchedules:"No schedules yet.", timerRemaining:"Timer remaining", error:"Error",
     status:"Status", version:"Version", customTimer:"Custom timer", minutesShort:"min",
     timerPresets:"Timer presets", timerPresetsHint:"The three times can be configured separately for each device.",
-    nextSwitch:"Next switch", firstSchedule:"Create first schedule now", scheduleSettings:"Time control / schedules", editShort:"Edit",
+    nextSwitch:"Next switch", firstSchedule:"Create first schedule now", scheduleSettings:"Time control / schedules", editShort:"Edit", quickTimerTitle:"Quick timer", quickTimerIntro:"One click turns the device on immediately and off again after the selected time.", timerRunning:"Timer running", timerEndsIn:"Turn off in", timerStarted:"Timer started", ownDuration:"Custom time…", stopTimer:"Stop timer", presetSettings:"Edit quick times", presetSaveHint:"Changes to the three times are saved with “Save”.",
     entityHint:"Supported: switch, light, climate, cover, fan",
     climateHint:"Some climate devices require heat_cool instead of heat.",
     coverHint:"0 = closed, 100 = fully open."
@@ -58,6 +58,7 @@ class TimeManagerCard extends HTMLElement {
     this._selectedId = null;
     this._modal = null;
     this._renderQueued = false;
+    this._timerInterval = null;
   }
 
   setConfig(config) {
@@ -124,8 +125,10 @@ class TimeManagerCard extends HTMLElement {
     if (!this._hass || !this._entryId()) return;
     try {
       await this._hass.callService("time_manager", service, {config_entry_id:this._entryId(), ...data});
+      return true;
     } catch (err) {
       alert(`${this._t("error")}: ${err?.message || err}`);
+      return false;
     }
   }
 
@@ -159,8 +162,15 @@ class TimeManagerCard extends HTMLElement {
       .tools{display:flex;flex-direction:column;gap:8px;justify-content:center;align-self:stretch}
       button.icon{width:44px;height:44px;border-radius:12px;border:1px solid var(--divider-color);background:var(--card-background-color);color:var(--primary-text-color);font-size:22px;cursor:pointer}
       button.icon:hover{background:var(--secondary-background-color)}
-      .timerActions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-      .timerActions button,.smallbtn,.primary{border:1px solid var(--divider-color);border-radius:9px;padding:6px 10px;background:var(--secondary-background-color);color:var(--primary-text-color);cursor:pointer}
+      .timerSection{margin-top:14px;padding:12px;border:1px solid var(--divider-color);border-radius:12px}
+      .timerStatus{margin:10px 0;padding:9px 10px;border-radius:9px;background:var(--secondary-background-color);font-size:13px}
+      .timerStatus.running{font-weight:600;color:var(--primary-color)}
+      .quickTimerButtons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+      .quickTimerBtn{min-height:42px;font-weight:600}
+      .timerSecondary{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+      .presetEditor{margin-top:12px;padding-top:10px;border-top:1px solid var(--divider-color)}
+      .timerActions button,.smallbtn,.primary,.danger{border:1px solid var(--divider-color);border-radius:9px;padding:6px 10px;background:var(--secondary-background-color);color:var(--primary-text-color);cursor:pointer}
+      .danger{border-color:var(--error-color,#db4437);color:var(--error-color,#db4437)}
       .primary{background:var(--primary-color);color:var(--text-primary-color,#fff);border-color:var(--primary-color)}
       .foot{margin-top:12px;font-size:11px;color:var(--secondary-text-color);text-align:right}
       .overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;padding:18px}
@@ -185,7 +195,7 @@ class TimeManagerCard extends HTMLElement {
       .sectionHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
       .sectionHead b{font-size:15px}
       .schedule button[data-edit-sch]{font-weight:600}
-      @media(max-width:560px){.grid2,.grid3{grid-template-columns:1fr}.row{grid-template-columns:28px minmax(0,1fr)}}
+      @media(max-width:560px){.grid2,.grid3,.quickTimerButtons{grid-template-columns:1fr}.row{grid-template-columns:28px minmax(0,1fr)}}
     `;
   }
 
@@ -313,21 +323,32 @@ class TimeManagerCard extends HTMLElement {
             </div>
           </div>
         </div>`}
-        <div class="section">
-          <b>${this._t("timerPresets")}</b>
-          <div class="grid3">
-            <div class="field"><label>1 (${this._t("minutesShort")})</label><input id="dTimer1" type="number" min="1" max="10080" value="${this._esc((d.timer_presets||[30,60,90])[0] ?? 30)}"></div>
-            <div class="field"><label>2 (${this._t("minutesShort")})</label><input id="dTimer2" type="number" min="1" max="10080" value="${this._esc((d.timer_presets||[30,60,90])[1] ?? 60)}"></div>
-            <div class="field"><label>3 (${this._t("minutesShort")})</label><input id="dTimer3" type="number" min="1" max="10080" value="${this._esc((d.timer_presets||[30,60,90])[2] ?? 90)}"></div>
+        <div class="timerSection">
+          <div class="sectionHead"><b>${this._t("quickTimerTitle")}</b></div>
+          <div class="hint">${this._t("quickTimerIntro")}</div>
+          ${device ? `
+            <div id="timerStatus" class="timerStatus ${d.timer_remaining_s>0?"running":""}">
+              ${d.timer_remaining_s>0 ? `${this._t("timerRunning")} · ${this._t("timerEndsIn")} ${this._fmtRemaining(d.timer_remaining_s)}` : "—"}
+            </div>
+            <div class="quickTimerButtons">
+              <button class="primary quickTimerBtn" data-device-timer="1">▶ ${this._esc((d.timer_presets||[30,60,90])[0] ?? 30)} min</button>
+              <button class="primary quickTimerBtn" data-device-timer="2">▶ ${this._esc((d.timer_presets||[30,60,90])[1] ?? 60)} min</button>
+              <button class="primary quickTimerBtn" data-device-timer="3">▶ ${this._esc((d.timer_presets||[30,60,90])[2] ?? 90)} min</button>
+            </div>
+            <div class="timerSecondary">
+              <button class="smallbtn" id="customTimer">${this._t("ownDuration")}</button>
+              <button class="danger" id="cancelTimer" ${d.timer_remaining_s>0?"":"hidden"}>■ ${this._t("stopTimer")}</button>
+            </div>
+          ` : ""}
+          <div class="presetEditor">
+            <b>${this._t("presetSettings")}</b>
+            <div class="grid3">
+              <div class="field"><label>1 (${this._t("minutesShort")})</label><input id="dTimer1" type="number" min="1" max="10080" value="${this._esc((d.timer_presets||[30,60,90])[0] ?? 30)}"></div>
+              <div class="field"><label>2 (${this._t("minutesShort")})</label><input id="dTimer2" type="number" min="1" max="10080" value="${this._esc((d.timer_presets||[30,60,90])[1] ?? 60)}"></div>
+              <div class="field"><label>3 (${this._t("minutesShort")})</label><input id="dTimer3" type="number" min="1" max="10080" value="${this._esc((d.timer_presets||[30,60,90])[2] ?? 90)}"></div>
+            </div>
+            <div class="hint">${this._t("presetSaveHint")}</div>
           </div>
-          <div class="hint">${this._t("timerPresetsHint")}</div>
-          ${device ? `<div class="timerActions">
-            <button data-device-timer="1">${this._esc((d.timer_presets||[30,60,90])[0] ?? 30)} min</button>
-            <button data-device-timer="2">${this._esc((d.timer_presets||[30,60,90])[1] ?? 60)} min</button>
-            <button data-device-timer="3">${this._esc((d.timer_presets||[30,60,90])[2] ?? 90)} min</button>
-            <button id="customTimer">…</button>
-            ${d.timer_remaining_s>0?`<button id="cancelTimer">× ${this._t("timer")}</button>`:""}
-          </div>` : ""}
         </div>
         <div class="actions"><button class="smallbtn" id="cancel">${this._t("cancel")}</button><button class="primary" id="saveDevice">${this._t("save")}</button></div>
       </div></div>`;
@@ -358,7 +379,10 @@ class TimeManagerCard extends HTMLElement {
     host.querySelector("#dEntity").addEventListener("change",renderDomain);
     host.querySelector("#dEntity").addEventListener("input",renderDomain);
 
-    const close=()=>{this._modal=null;host.innerHTML="";this._queueRender();};
+    const close=()=>{
+      if(this._timerInterval){clearInterval(this._timerInterval);this._timerInterval=null;}
+      this._modal=null;host.innerHTML="";this._queueRender();
+    };
     host.querySelector("#cancel").addEventListener("click",close);
     host.querySelector("#overlay").addEventListener("click",e=>{if(e.target.id==="overlay")close();});
 
@@ -379,18 +403,55 @@ class TimeManagerCard extends HTMLElement {
     if (device) {
       this._renderSchedules(device);
       host.querySelector("#addSchedule").addEventListener("click",()=>this._openSchedule(device,null));
+      let timerUntil = d.timer_remaining_s>0 ? Date.now()+Number(d.timer_remaining_s)*1000 : 0;
+      const updateTimerUi=()=>{
+        const status=host.querySelector("#timerStatus");
+        const cancel=host.querySelector("#cancelTimer");
+        if(!status) return;
+        const remaining=Math.max(0,Math.ceil((timerUntil-Date.now())/1000));
+        if(remaining>0){
+          status.classList.add("running");
+          status.textContent=`${this._t("timerRunning")} · ${this._t("timerEndsIn")} ${this._fmtRemaining(remaining)}`;
+          if(cancel) cancel.hidden=false;
+        }else{
+          status.classList.remove("running");
+          status.textContent="—";
+          if(cancel) cancel.hidden=true;
+          if(this._timerInterval){clearInterval(this._timerInterval);this._timerInterval=null;}
+        }
+      };
+      const startTimer=async(minutes)=>{
+        minutes=Math.max(1,Math.min(10080,Number(minutes||0)));
+        if(!minutes) return;
+        const ok=await this._call("start_timer",{device_id:device.id,duration_min:minutes});
+        if(ok){
+          timerUntil=Date.now()+minutes*60000;
+          updateTimerUi();
+          if(this._timerInterval) clearInterval(this._timerInterval);
+          this._timerInterval=setInterval(updateTimerUi,1000);
+        }
+      };
       host.querySelectorAll("[data-device-timer]").forEach(b=>b.addEventListener("click",async()=>{
         const input=host.querySelector(`#dTimer${b.dataset.deviceTimer}`);
-        const minutes=Math.max(1,Number(input?.value||0));
-        if(minutes>0) await this._call("start_timer",{device_id:device.id,duration_min:minutes});
+        await startTimer(input?.value);
+      }));
+      [1,2,3].forEach(i=>host.querySelector(`#dTimer${i}`)?.addEventListener("input",e=>{
+        const btn=host.querySelector(`[data-device-timer="${i}"]`);
+        if(btn) btn.textContent=`▶ ${Math.max(1,Number(e.target.value||1))} min`;
       }));
       host.querySelector("#customTimer")?.addEventListener("click",async()=>{
         const v=prompt(`${this._t("minutes")}:`,"45");
-        if(v && Number(v)>0) await this._call("start_timer",{device_id:device.id,duration_min:Number(v)});
+        if(v && Number(v)>0) await startTimer(Number(v));
       });
       host.querySelector("#cancelTimer")?.addEventListener("click",async()=>{
-        await this._call("cancel_timer",{device_id:device.id,turn_off:true});
+        const ok=await this._call("cancel_timer",{device_id:device.id,turn_off:true});
+        if(ok){timerUntil=0;updateTimerUi();}
       });
+      updateTimerUi();
+      if(timerUntil>Date.now()){
+        if(this._timerInterval) clearInterval(this._timerInterval);
+        this._timerInterval=setInterval(updateTimerUi,1000);
+      }
     }
 
     host.querySelector("#saveDevice").addEventListener("click",async()=>{
