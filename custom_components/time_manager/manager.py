@@ -154,6 +154,11 @@ class TimeManager:
         if domain not in SUPPORTED_DOMAINS:
             raise ValueError(f"Nicht unterstützte Domain: {domain}")
 
+        initial_schedule = data.get("initial_schedule")
+        schedules = []
+        if isinstance(initial_schedule, dict):
+            schedules.append(self._normalize_schedule(initial_schedule))
+
         device = self._normalize_device(
             {
                 "id": uuid.uuid4().hex,
@@ -165,7 +170,7 @@ class TimeManager:
                 "cover_on_position": data.get("cover_on_position", 100),
                 "cover_off_position": data.get("cover_off_position", 0),
                 "timer_presets": data.get("timer_presets", [30, 60, 90]),
-                "schedules": [],
+                "schedules": schedules,
             }
         )
         self.devices.append(device)
@@ -457,7 +462,7 @@ class TimeManager:
             "scan_interval": self.scan_interval,
             "devices": result,
             "supported_domains": SUPPORTED_DOMAINS,
-            "version": "0.2.0",
+            "version": "0.2.1",
         }
 
     async def _async_tick(self, _now) -> None:
