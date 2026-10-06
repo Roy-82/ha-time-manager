@@ -109,6 +109,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             vol.Optional("cover_on_position", default=100): vol.All(vol.Coerce(int), vol.Range(min=0, max=100)),
             vol.Optional("cover_off_position", default=0): vol.All(vol.Coerce(int), vol.Range(min=0, max=100)),
             vol.Optional("timer_presets", default=[30, 60, 90]): [vol.All(vol.Coerce(int), vol.Range(min=1, max=10080))],
+            vol.Optional("initial_schedule"): dict,
         }
         hass.services.async_register(DOMAIN, SERVICE_ADD_DEVICE, add_device, schema=vol.Schema(common))
 
