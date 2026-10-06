@@ -462,7 +462,7 @@ class TimeManager:
             "scan_interval": self.scan_interval,
             "devices": result,
             "supported_domains": SUPPORTED_DOMAINS,
-            "version": "0.2.1",
+            "version": "0.2.2",
         }
 
     async def _async_tick(self, _now) -> None:
