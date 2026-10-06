@@ -53,7 +53,7 @@ Bei Climate-Geräten können HVAC-Modus und Solltemperatur festgelegt werden. Be
 
 Unter **Einstellungen → Dashboards → Ressourcen** einmalig hinzufügen:
 
-- URL: `/time_manager/time-manager-card.js?v=0.2.1`
+- URL: `/time_manager/time-manager-card.js?v=0.2.2`
 - Typ: **JavaScript-Modul**
 
 Danach eine manuelle Karte anlegen:
@@ -100,8 +100,16 @@ Die Übersicht bleibt bewusst kompakt. Pro Gerät werden nur der gewählte Name,
 
 ## Timer
 
+### Schnelltimer starten
+
+Im Geräteeditor sind die drei gespeicherten Schnellzeiten als große Start-Tasten sichtbar. Ein Klick startet den Timer sofort, schaltet das Gerät ein und zeigt die verbleibende Zeit direkt im Editor an. Zusätzlich gibt es **Eigene Zeit…** sowie bei laufendem Timer **Timer stoppen**.
+
+Unter **Schnellzeiten ändern** können die drei Vorgabewerte pro Gerät angepasst werden. Die geänderten Vorgabewerte werden mit **Speichern** übernommen.
+
+
+
 Die Timer-Bedienung befindet sich im Geräteeditor hinter **✎**. Pro Gerät können drei Schnellwahlzeiten frei festgelegt werden; Standard sind 30, 60 und 90 Minuten. Dort lassen sich die Schnell-Timer direkt starten, über **…** eine freie Dauer eingeben und ein laufender Timer abbrechen.
 
 Der Zeitmanager erzeugt keine Home-Assistant-Automationen. Die Zeitpläne werden von der Integration selbst verwaltet.
 
-Version: **0.2.1**
+Version: **0.2.2**
