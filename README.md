@@ -53,7 +53,7 @@ Bei Climate-Geräten können HVAC-Modus und Solltemperatur festgelegt werden. Be
 
 Unter **Einstellungen → Dashboards → Ressourcen** einmalig hinzufügen:
 
-- URL: `/time_manager/time-manager-card.js?v=0.2.0`
+- URL: `/time_manager/time-manager-card.js?v=0.2.1`
 - Typ: **JavaScript-Modul**
 
 Danach eine manuelle Karte anlegen:
@@ -93,6 +93,9 @@ Solltemperatur: 20 °C
 
 ## Geräteübersicht
 
+Beim Hinzufügen eines neuen Geräts kann direkt der erste Zeitplan angelegt werden – inklusive Wochentagen, fester Uhrzeit oder Sonnenaufgang/Sonnenuntergang sowie positivem oder negativem Zeitversatz. Beim Bearbeiten stehen die Zeitpläne direkt unter den Gerätedaten und damit vor den Timer-Einstellungen.
+
+
 Die Übersicht bleibt bewusst kompakt. Pro Gerät werden nur der gewählte Name, die Entität und die nächste Schaltung angezeigt. Links aktiviert oder deaktiviert eine Checkbox die Zeitsteuerung dieses Geräts. Rechts stehen +, − und ✎ vertikal zentriert neben der Geräteliste.
 
 ## Timer
@@ -101,4 +104,4 @@ Die Timer-Bedienung befindet sich im Geräteeditor hinter **✎**. Pro Gerät k�
 
 Der Zeitmanager erzeugt keine Home-Assistant-Automationen. Die Zeitpläne werden von der Integration selbst verwaltet.
 
-Version: **0.2.0**
+Version: **0.2.1**
