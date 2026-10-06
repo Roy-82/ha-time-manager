@@ -41,6 +41,14 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: HACS validieren
+        uses: hacs/action@main
+        with:
+          category: integration
+
+      - name: Hassfest validieren
+        uses: home-assistant/actions/hassfest@master
+
       - name: GitHub Release erstellen
         env:
           GH_TOKEN: ${{ github.token }}
