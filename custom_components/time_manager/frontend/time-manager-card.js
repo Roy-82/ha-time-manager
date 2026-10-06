@@ -1,4 +1,4 @@
-const TIME_MANAGER_VERSION = "0.2.0";
+const TIME_MANAGER_VERSION = "0.2.1";
 
 const TM_I18N = {
   de: {
@@ -19,7 +19,7 @@ const TM_I18N = {
     noSchedules:"Noch keine Zeitpläne.", timerRemaining:"Timer läuft noch", error:"Fehler",
     status:"Status", version:"Version", customTimer:"Eigener Timer", minutesShort:"min",
     timerPresets:"Timer-Schnellwahl", timerPresetsHint:"Die drei Zeiten können für jedes Gerät getrennt festgelegt werden.",
-    nextSwitch:"Nächste Schaltung",
+    nextSwitch:"Nächste Schaltung", firstSchedule:"Ersten Zeitplan direkt anlegen", scheduleSettings:"Zeitsteuerung / Zeitpläne", editShort:"Bearbeiten",
     entityHint:"Unterstützt: switch, light, climate, cover, fan",
     climateHint:"Bei deiner HANTECH kann z. B. heat_cool statt heat verwendet werden.",
     coverHint:"0 = geschlossen, 100 = vollständig geöffnet."
@@ -42,7 +42,7 @@ const TM_I18N = {
     noSchedules:"No schedules yet.", timerRemaining:"Timer remaining", error:"Error",
     status:"Status", version:"Version", customTimer:"Custom timer", minutesShort:"min",
     timerPresets:"Timer presets", timerPresetsHint:"The three times can be configured separately for each device.",
-    nextSwitch:"Next switch",
+    nextSwitch:"Next switch", firstSchedule:"Create first schedule now", scheduleSettings:"Time control / schedules", editShort:"Edit",
     entityHint:"Supported: switch, light, climate, cover, fan",
     climateHint:"Some climate devices require heat_cool instead of heat.",
     coverHint:"0 = closed, 100 = fully open."
@@ -181,6 +181,10 @@ class TimeManagerCard extends HTMLElement {
       .weekdays{display:flex;gap:5px;flex-wrap:wrap}
       .day{display:flex;align-items:center;gap:3px;padding:5px 7px;border-radius:8px;background:var(--secondary-background-color);font-size:12px}
       .section{margin-top:15px;padding-top:12px;border-top:1px solid var(--divider-color)}
+      .scheduleSection{margin-top:14px;padding:12px;border:1px solid var(--divider-color);border-radius:12px;background:var(--secondary-background-color)}
+      .sectionHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+      .sectionHead b{font-size:15px}
+      .schedule button[data-edit-sch]{font-weight:600}
       @media(max-width:560px){.grid2,.grid3{grid-template-columns:1fr}.row{grid-template-columns:28px minmax(0,1fr)}}
     `;
   }
@@ -270,6 +274,45 @@ class TimeManagerCard extends HTMLElement {
         </div>
         <div class="field check"><input id="dEnabled" type="checkbox" ${d.enabled?"checked":""}><label for="dEnabled">${this._t("enabled")}</label></div>
         <div id="domainFields"></div>
+        ${device ? `
+        <div class="scheduleSection">
+          <div class="sectionHead"><b>${this._t("scheduleSettings")}</b><button class="primary" id="addSchedule">+ ${this._t("addSchedule")}</button></div>
+          <div id="scheduleList"></div>
+        </div>` : `
+        <div class="scheduleSection">
+          <div class="field check"><input id="createFirstSchedule" type="checkbox" checked><label for="createFirstSchedule"><b>${this._t("firstSchedule")}</b></label></div>
+          <div id="firstScheduleFields">
+            <div class="grid2">
+              <div class="field"><label>${this._t("scheduleName")}</label><input id="firstName" value="${this._esc(this._t("schedules"))} 1"></div>
+              <div class="field check"><input id="firstEnabled" type="checkbox" checked><label for="firstEnabled">${this._t("active")}</label></div>
+            </div>
+            <div class="field"><label>${this._t("weekdays")}</label><div class="weekdays">
+              ${["mo","tu","we","th","fr","sa","su"].map((k,i)=>`<label class="day"><input type="checkbox" data-first-day="${i}" checked> ${this._t(k)}</label>`).join("")}
+            </div></div>
+            <div class="section"><b>${this._t("start")}</b>
+              <div class="grid2">
+                <div class="field"><label>Typ</label><select id="firstStartType">
+                  <option value="time">${this._t("fixedTime")}</option>
+                  <option value="sunrise">${this._t("sunrise")}</option>
+                  <option value="sunset">${this._t("sunset")}</option>
+                </select></div>
+                <div class="field" id="firstStartTimeWrap"><label>${this._t("time")}</label><input id="firstStartTime" type="time" value="08:00"></div>
+              </div>
+              <div class="field"><label>${this._t("offset")}</label><input id="firstStartOffset" type="number" value="0"></div>
+            </div>
+            <div class="section"><b>${this._t("end")}</b>
+              <div class="grid2">
+                <div class="field"><label>Typ</label><select id="firstEndType">
+                  <option value="time">${this._t("fixedTime")}</option>
+                  <option value="sunrise">${this._t("sunrise")}</option>
+                  <option value="sunset">${this._t("sunset")}</option>
+                </select></div>
+                <div class="field" id="firstEndTimeWrap"><label>${this._t("time")}</label><input id="firstEndTime" type="time" value="10:00"></div>
+              </div>
+              <div class="field"><label>${this._t("offset")}</label><input id="firstEndOffset" type="number" value="0"></div>
+            </div>
+          </div>
+        </div>`}
         <div class="section">
           <b>${this._t("timerPresets")}</b>
           <div class="grid3">
@@ -286,11 +329,6 @@ class TimeManagerCard extends HTMLElement {
             ${d.timer_remaining_s>0?`<button id="cancelTimer">× ${this._t("timer")}</button>`:""}
           </div>` : ""}
         </div>
-        ${device ? `
-        <div class="section">
-          <div style="display:flex;align-items:center;justify-content:space-between"><b>${this._t("schedules")}</b><button class="smallbtn" id="addSchedule">+ ${this._t("addSchedule")}</button></div>
-          <div id="scheduleList"></div>
-        </div>` : ""}
         <div class="actions"><button class="smallbtn" id="cancel">${this._t("cancel")}</button><button class="primary" id="saveDevice">${this._t("save")}</button></div>
       </div></div>`;
 
@@ -323,6 +361,20 @@ class TimeManagerCard extends HTMLElement {
     const close=()=>{this._modal=null;host.innerHTML="";this._queueRender();};
     host.querySelector("#cancel").addEventListener("click",close);
     host.querySelector("#overlay").addEventListener("click",e=>{if(e.target.id==="overlay")close();});
+
+    if (!device) {
+      const toggleFirst=()=>{ host.querySelector("#firstScheduleFields").style.display=host.querySelector("#createFirstSchedule").checked?"block":"none"; };
+      host.querySelector("#createFirstSchedule").addEventListener("change",toggleFirst);
+      const toggleTime=(prefix)=>{
+        const type=host.querySelector(`#first${prefix}Type`).value;
+        host.querySelector(`#first${prefix}TimeWrap`).style.display=type==="time"?"block":"none";
+      };
+      ["Start","End"].forEach(p=>{
+        host.querySelector(`#first${p}Type`).addEventListener("change",()=>toggleTime(p));
+        toggleTime(p);
+      });
+      toggleFirst();
+    }
 
     if (device) {
       this._renderSchedules(device);
@@ -359,6 +411,21 @@ class TimeManagerCard extends HTMLElement {
         data.cover_off_position=Number(host.querySelector("#dCoverOff").value);
       }
       if(!data.entity_id || !["switch","light","climate","cover","fan"].includes(domain)) return alert(this._t("entityHint"));
+      if(!device && host.querySelector("#createFirstSchedule")?.checked){
+        const weekdays=[...host.querySelectorAll("[data-first-day]:checked")].map(x=>Number(x.dataset.firstDay));
+        if(!weekdays.length) return alert(this._t("weekdays"));
+        data.initial_schedule={
+          name:host.querySelector("#firstName").value.trim() || "Zeitplan",
+          enabled:host.querySelector("#firstEnabled").checked,
+          weekdays,
+          start_type:host.querySelector("#firstStartType").value,
+          start_time:host.querySelector("#firstStartTime").value || "00:00",
+          start_offset_min:Number(host.querySelector("#firstStartOffset").value || 0),
+          end_type:host.querySelector("#firstEndType").value,
+          end_time:host.querySelector("#firstEndTime").value || "00:00",
+          end_offset_min:Number(host.querySelector("#firstEndOffset").value || 0),
+        };
+      }
       if(device) await this._call("update_device",{device_id:device.id,...data});
       else await this._call("add_device",data);
       close();
@@ -382,7 +449,7 @@ class TimeManagerCard extends HTMLElement {
           <div class="schTitle">${this._esc(s.name)} ${!s.enabled?`· ${this._t("disabled")}`:""}</div>
           <div class="schSub">${s.weekdays.map(i=>names[i]).join(" ")} · ${describeEvent(s,"start")} → ${describeEvent(s,"end")}</div>
         </div>
-        <div><button class="smallbtn" data-edit-sch="${s.id}">✎</button> <button class="smallbtn" data-del-sch="${s.id}">−</button></div>
+        <div><button class="smallbtn" data-edit-sch="${s.id}">✎ ${this._t("editShort")}</button> <button class="smallbtn" data-del-sch="${s.id}">−</button></div>
       </div>`).join("") || `<div class="hint" style="padding:10px 0">${this._t("noSchedules")}</div>`;
 
     list.querySelectorAll("[data-edit-sch]").forEach(b=>b.addEventListener("click",()=>this._openSchedule(device,(device.schedules||[]).find(s=>s.id===b.dataset.editSch))));
